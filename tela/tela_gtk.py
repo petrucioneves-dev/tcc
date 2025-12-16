@@ -86,8 +86,8 @@ class PainelAcessivel(Gtk.Window):
         url = "https://www.google.com"
         
         # Tenta Chromium (padrão), depois Firefox, depois genérico
-        if shutil.which("chromium-browser"):
-            subprocess.Popen(["chromium-browser", url])
+        if shutil.which("chromium"):
+            subprocess.Popen(["chromium", url])
         elif shutil.which("firefox"):
             subprocess.Popen(["firefox", url])
         else:
