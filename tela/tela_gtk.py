@@ -165,15 +165,26 @@ class PainelAcessivel(Gtk.Window):
 
     def aplicar_nova_data(self, nova_data_string):
         print(f"Tentando alterar para: {nova_data_string}")
+        # Tenta achar o terminal
         terminal = shutil.which("lxterminal") or shutil.which("x-terminal-emulator") or shutil.which("xterm")
         
         if terminal:
-            # Comando com sudo date (requer permissão no visudo ou senha)
-            comando_shell = f"sudo date -s '{nova_data_string}'; echo '--- Concluido. Pressione Enter para fechar ---'; read input"
+            # O comando agora faz 3 coisas:
+            # 1. Desliga a atualização automática (timedatectl set-ntp false)
+            # 2. Muda a data (date -s)
+            # 3. Espera você ler (read input)
+            
+            comando_shell = (
+                f"sudo timedatectl set-ntp false; "
+                f"sudo date -s '{nova_data_string}'; "
+                f"echo '--- Data Alterada com Sucesso ---'; "
+                f"echo 'Pressione Enter para fechar'; "
+                f"read input"
+            )
+            
             subprocess.Popen([terminal, "-e", f"bash -c \"{comando_shell}\""])
         else:
             print("Terminal não encontrado para ajustar data.")
-
     # --- Demais Funções (Iguais às anteriores) ---
 
     def aumentar_volume(self, widget):
