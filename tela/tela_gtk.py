@@ -11,7 +11,7 @@ from gi.repository import Gtk, Gdk, GLib
 class PainelAcessivel(Gtk.Window):
     def __init__(self):
         super().__init__(title="Painel Acessível")
-        self.set_default_size(320, 550) 
+        self.set_default_size(320, 600) 
         self.set_border_width(10)
         
         self.connect("destroy", Gtk.main_quit)
@@ -20,13 +20,24 @@ class PainelAcessivel(Gtk.Window):
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.add(self.box)
 
-        # --- Botão Relógio (O primeiro da lista) ---
-        # Ele começa com um texto temporário e atualiza automaticamente
+        # --- Botão Relógio ---
         self.btn_relogio = Gtk.Button(label="Carregando...")
         self.btn_relogio.connect("clicked", self.abrir_dialogo_data_hora)
         self.box.pack_start(self.btn_relogio, True, True, 0)
 
-        # --- Outros Botões ---
+        # --- NOVOS BOTÕES ADICIONADOS AQUI ---
+
+        # 1. Botão Gerenciador de Arquivos
+        self.btn_pastas = Gtk.Button(label="Abrir Meus Arquivos")
+        self.btn_pastas.connect("clicked", self.abrir_pastas)
+        self.box.pack_start(self.btn_pastas, True, True, 0)
+
+        # 2. Botão Internet
+        self.btn_internet = Gtk.Button(label="Acessar Internet")
+        self.btn_internet.connect("clicked", self.abrir_internet)
+        self.box.pack_start(self.btn_internet, True, True, 0)
+
+        # --------------------------------------
 
         self.btn_aumentar = Gtk.Button(label="Aumentar Volume")
         self.btn_aumentar.connect("clicked", self.aumentar_volume)
@@ -56,29 +67,46 @@ class PainelAcessivel(Gtk.Window):
         self.connect("key-press-event", self.ao_pressionar_tecla)
 
         # --- Inicia o Timer do Relógio ---
-        # Atualiza a cada 1 segundo (1000 ms não é preciso aqui, usa-se segundos)
-        self.atualizar_relogio() # Chama a primeira vez
-        GLib.timeout_add_seconds(1, self.atualizar_relogio) # Configura o loop
+        self.atualizar_relogio() 
+        GLib.timeout_add_seconds(1, self.atualizar_relogio)
+
+    # --- FUNÇÕES DOS NOVOS BOTÕES ---
+
+    def abrir_pastas(self, widget):
+        print("Abrindo gerenciador de arquivos...")
+        # Tenta abrir o pcmanfm (padrão Raspberry) na pasta do usuário (~)
+        if shutil.which("pcmanfm"):
+            subprocess.Popen(["pcmanfm", os.path.expanduser("~")])
+        else:
+            # Fallback genérico se não achar o pcmanfm
+            subprocess.Popen(["xdg-open", os.path.expanduser("~")])
+
+    def abrir_internet(self, widget):
+        print("Abrindo navegador...")
+        url = "https://www.google.com"
+        
+        # Tenta Chromium (padrão), depois Firefox, depois genérico
+        if shutil.which("chromium-browser"):
+            subprocess.Popen(["chromium-browser", url])
+        elif shutil.which("firefox"):
+            subprocess.Popen(["firefox", url])
+        else:
+            subprocess.Popen(["xdg-open", url])
 
     # --- Lógica do Relógio ---
 
     def atualizar_relogio(self):
         agora = datetime.now()
         
-        # Removi o %S (segundos). Agora mostra apenas Hora:Minuto
-        # Isso acalma o Orca.
+        # Mostra apenas Hora:Minuto para não bugar o Orca
         novo_texto = agora.strftime("Data: %d/%m/%Y\n\nHora: %H:%M")
         
-        # TRUQUE IMPORTANTE:
-        # Só manda atualizar o botão se o texto TIVER MUDADO.
-        # Se for o mesmo minuto, não faz nada. Isso evita disparar eventos repetidos.
         if self.btn_relogio.get_label() != novo_texto:
             self.btn_relogio.set_label(novo_texto)
             
-        return True # Mantém o timer rodando para checar a cada segundo
+        return True 
 
     def abrir_dialogo_data_hora(self, widget):
-        # Cria uma janela de diálogo (Dialog)
         dialogo = Gtk.Dialog(title="Ajustar Data e Hora", transient_for=self, flags=0)
         dialogo.add_buttons(
             Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -98,24 +126,22 @@ class PainelAcessivel(Gtk.Window):
         box_conteudo.pack_start(lbl_data, False, False, 0)
 
         box_data = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
-        box_data.set_halign(Gtk.Align.CENTER) # Centraliza
+        box_data.set_halign(Gtk.Align.CENTER) 
         box_conteudo.pack_start(box_data, False, False, 0)
 
-        # SpinButton (Dia): Valor atual, Mínimo, Máximo, Passo
+        # SpinButtons
         adj_dia = Gtk.Adjustment(value=agora.day, lower=1, upper=31, step_increment=1)
         self.spin_dia = Gtk.SpinButton(adjustment=adj_dia)
         box_data.pack_start(self.spin_dia, False, False, 0)
 
         box_data.pack_start(Gtk.Label(label="/"), False, False, 0)
 
-        # SpinButton (Mês)
         adj_mes = Gtk.Adjustment(value=agora.month, lower=1, upper=12, step_increment=1)
         self.spin_mes = Gtk.SpinButton(adjustment=adj_mes)
         box_data.pack_start(self.spin_mes, False, False, 0)
 
         box_data.pack_start(Gtk.Label(label="/"), False, False, 0)
 
-        # SpinButton (Ano)
         adj_ano = Gtk.Adjustment(value=agora.year, lower=2020, upper=2050, step_increment=1)
         self.spin_ano = Gtk.SpinButton(adjustment=adj_ano)
         box_data.pack_start(self.spin_ano, False, False, 0)
@@ -123,57 +149,45 @@ class PainelAcessivel(Gtk.Window):
         # --- Área da Hora ---
         lbl_hora = Gtk.Label(label="<b>Horário (Hora : Minuto)</b>")
         lbl_hora.set_use_markup(True)
-        box_conteudo.pack_start(lbl_hora, False, False, 10) # 10 de padding em cima
+        box_conteudo.pack_start(lbl_hora, False, False, 10)
 
         box_hora = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         box_hora.set_halign(Gtk.Align.CENTER)
         box_conteudo.pack_start(box_hora, False, False, 0)
 
-        # SpinButton (Hora)
         adj_hora = Gtk.Adjustment(value=agora.hour, lower=0, upper=23, step_increment=1)
         self.spin_hora = Gtk.SpinButton(adjustment=adj_hora)
         box_hora.pack_start(self.spin_hora, False, False, 0)
 
         box_hora.pack_start(Gtk.Label(label=":"), False, False, 0)
 
-        # SpinButton (Minuto)
         adj_min = Gtk.Adjustment(value=agora.minute, lower=0, upper=59, step_increment=1)
         self.spin_min = Gtk.SpinButton(adjustment=adj_min)
         box_hora.pack_start(self.spin_min, False, False, 0)
 
-        # Mostra tudo
         dialogo.show_all()
 
-        # Espera o usuário clicar
         resposta = dialogo.run()
 
         if resposta == Gtk.ResponseType.OK:
-            # Pega os valores (convertendo para Inteiro e formatando string)
             d = int(self.spin_dia.get_value())
             m = int(self.spin_mes.get_value())
             a = int(self.spin_ano.get_value())
             h = int(self.spin_hora.get_value())
             minuto = int(self.spin_min.get_value())
 
-            # Formata: "YYYY-MM-DD HH:MM:SS"
             nova_data = f"{a:04d}-{m:02d}-{d:02d} {h:02d}:{minuto:02d}:00"
             
-            dialogo.destroy() # Fecha a janela antes de rodar o comando
+            dialogo.destroy()
             self.aplicar_nova_data(nova_data)
         else:
             dialogo.destroy()
 
     def aplicar_nova_data(self, nova_data_string):
         print(f"Tentando alterar para: {nova_data_string}")
-        # Tenta achar o terminal
         terminal = shutil.which("lxterminal") or shutil.which("x-terminal-emulator") or shutil.which("xterm")
         
         if terminal:
-            # O comando agora faz 3 coisas:
-            # 1. Desliga a atualização automática (timedatectl set-ntp false)
-            # 2. Muda a data (date -s)
-            # 3. Espera você ler (read input)
-            
             comando_shell = (
                 f"sudo timedatectl set-ntp false; "
                 f"sudo date -s '{nova_data_string}'; "
@@ -185,10 +199,11 @@ class PainelAcessivel(Gtk.Window):
             subprocess.Popen([terminal, "-e", f"bash -c \"{comando_shell}\""])
         else:
             print("Terminal não encontrado para ajustar data.")
-    # --- Demais Funções (Iguais às anteriores) ---
+
+    # --- Demais Funções ---
 
     def aumentar_volume(self, widget):
-        # Lembre de trocar HDMI pelo nome certo se precisar (ex: PCM, Master)
+        # Ajuste aqui se necessário (HDMI, PCM, Master)
         os.system("amixer sset HDMI 5%+") 
 
     def diminuir_volume(self, widget):
@@ -218,6 +233,9 @@ class PainelAcessivel(Gtk.Window):
         if keyname in ["Down", "Up"]:
             foco_atual = self.get_focus()
             botoes = self.box.get_children()
+            
+            # Filtra para ter certeza que só pegamos botões (caso tenha labels soltas)
+            # Mas no layout atual todos os filhos de 'box' são botões
             
             if foco_atual not in botoes:
                 botoes[0].grab_focus()
