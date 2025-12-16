@@ -7,7 +7,7 @@ import json
 import subprocess
 import time
 
-MODEL_PATH = "/home/petrucio/tcc/project/vosk-model-small-pt-0.3"
+MODEL_PATH = "/home/tcc/tcc/project/vosk-model-small-pt-0.3"
 
 if not os.path.exists(MODEL_PATH):
     print("Modelo não encontrado!")
@@ -27,7 +27,7 @@ def falar(mensagem):
 def executar_comando(comando):
     if comando == "navegador":
         falar("Abrindo navegador")
-        subprocess.Popen(["google-chrome"])
+        subprocess.Popen(["chromium"])
     
     elif comando == "desligar":
         falar("Desligando o sistema")
