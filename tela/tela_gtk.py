@@ -64,10 +64,18 @@ class PainelAcessivel(Gtk.Window):
 
     def atualizar_relogio(self):
         agora = datetime.now()
-        # Formato visual com quebra de linha igual ao seu anterior
-        texto = agora.strftime("Data: %d/%m/%Y\n\nHora: %H:%M:%S")
-        self.btn_relogio.set_label(texto)
-        return True # Retorna True para continuar rodando a cada segundo
+        
+        # Removi o %S (segundos). Agora mostra apenas Hora:Minuto
+        # Isso acalma o Orca.
+        novo_texto = agora.strftime("Data: %d/%m/%Y\n\nHora: %H:%M")
+        
+        # TRUQUE IMPORTANTE:
+        # Só manda atualizar o botão se o texto TIVER MUDADO.
+        # Se for o mesmo minuto, não faz nada. Isso evita disparar eventos repetidos.
+        if self.btn_relogio.get_label() != novo_texto:
+            self.btn_relogio.set_label(novo_texto)
+            
+        return True # Mantém o timer rodando para checar a cada segundo
 
     def abrir_dialogo_data_hora(self, widget):
         # Cria uma janela de diálogo (Dialog)
