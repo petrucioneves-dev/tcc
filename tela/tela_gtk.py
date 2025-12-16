@@ -59,13 +59,13 @@ class PainelAcessivel(Gtk.Window):
 
     def configurar_wifi(self, widget):
         # Abre o nmtui no xterm
-        terminal = shutil.which("xterm")
+        terminal = shutil.which("lxterminal")
         if terminal:
             subprocess.Popen([terminal, "-e", "nmtui"])
 
     def configurar_bluetooth(self, widget):
         # Tenta abrir o bluetuith (se instalado) ou blueman
-        terminal = shutil.which("xterm")
+        terminal = shutil.which("lxterminal")
         if shutil.which("bluetuith") and terminal:
              subprocess.Popen([terminal, "-e", "bluetuith"])
         elif shutil.which("blueman-manager"):
