@@ -74,13 +74,10 @@ class PainelAcessivel(Gtk.Window):
 
     def abrir_pastas(self, widget):
         print("Abrindo gerenciador de arquivos...")
-        # Tenta abrir o pcmanfm (padrão Raspberry) na pasta do usuário (~)
-        if shutil.which("pcmanfm"):
-            subprocess.Popen(["pcmanfm", os.path.expanduser("~")])
-        else:
-            # Fallback genérico se não achar o pcmanfm
-            subprocess.Popen(["xdg-open", os.path.expanduser("~")])
-
+        # O xdg-open é o comando universal. 
+        # Ele abre a pasta sem causar o erro de memória do pcmanfm direto.
+        subprocess.Popen(["xdg-open", os.path.expanduser("~")])
+        
     def abrir_internet(self, widget):
         print("Abrindo navegador...")
         url = "https://www.google.com"
