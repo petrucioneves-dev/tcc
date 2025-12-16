@@ -10,18 +10,16 @@ from gi.repository import Gtk, Gdk
 class PainelAcessivel(Gtk.Window):
     def __init__(self):
         super().__init__(title="Painel Acessível")
-        self.set_default_size(300, 400)
+        self.set_default_size(300, 450) # Aumentei um pouco a altura
         self.set_border_width(10)
         
-        # Conecta o evento de fechar a janela ao encerramento do script
         self.connect("destroy", Gtk.main_quit)
 
-        # --- Layout Principal (Caixa Vertical) ---
+        # --- Layout Principal ---
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.add(self.box)
 
-        # --- Criação dos Botões ---
-        # No GTK, o Orca lê o "label" do botão automaticamente
+        # --- Botões ---
 
         self.btn_aumentar = Gtk.Button(label="Aumentar Volume")
         self.btn_aumentar.connect("clicked", self.aumentar_volume)
@@ -35,52 +33,63 @@ class PainelAcessivel(Gtk.Window):
         self.btn_wifi.connect("clicked", self.configurar_wifi)
         self.box.pack_start(self.btn_wifi, True, True, 0)
 
-        self.btn_bluetooth = Gtk.Button(label="Configurar Bluetooth")
-        self.btn_bluetooth.connect("clicked", self.configurar_bluetooth)
-        self.box.pack_start(self.btn_bluetooth, True, True, 0)
+        # Botão 1: Bluetooth Terminal (TUI)
+        self.btn_bt_tui = Gtk.Button(label="Bluetooth (Terminal)")
+        self.btn_bt_tui.connect("clicked", self.configurar_bluetooth_tui)
+        self.box.pack_start(self.btn_bt_tui, True, True, 0)
+
+        # Botão 2: Bluetooth Visual (GUI)
+        self.btn_bt_gui = Gtk.Button(label="Bluetooth (Visual)")
+        self.btn_bt_gui.connect("clicked", self.configurar_bluetooth_gui)
+        self.box.pack_start(self.btn_bt_gui, True, True, 0)
 
         self.btn_sair = Gtk.Button(label="Sair do Sistema")
         self.btn_sair.connect("clicked", Gtk.main_quit)
         self.box.pack_start(self.btn_sair, True, True, 0)
 
         # --- Navegação com Setas ---
-        # O padrão do GTK é TAB, mas vamos forçar as setas para ficar igual ao seu pedido
         self.connect("key-press-event", self.ao_pressionar_tecla)
 
-    # --- Funções de Lógica (Comandos do Sistema) ---
+    # --- Funções de Lógica ---
 
     def aumentar_volume(self, widget):
-        print("Aumentando...")
-        os.system("amixer sset PCM 5%+") # Se não funcionar, tente "Master" em vez de "PCM"
+        os.system("amixer sset PCM 5%+") 
 
     def diminuir_volume(self, widget):
-        print("Diminuindo...")
         os.system("amixer sset PCM 5%-")
 
     def configurar_wifi(self, widget):
-        # Abre o nmtui no xterm
-        terminal = shutil.which("lxterminal")
+        # Adicionei lxterminal para garantir compatibilidade com Wayland
+        terminal = shutil.which("lxterminal") or shutil.which("x-terminal-emulator") or shutil.which("gnome-terminal") or shutil.which("xterm")
         if terminal:
             subprocess.Popen([terminal, "-e", "nmtui"])
 
-    def configurar_bluetooth(self, widget):
-        # Tenta abrir o bluetuith (se instalado) ou blueman
-        terminal = shutil.which("lxterminal")
+    # --- Funções de Bluetooth Separadas ---
+
+    def configurar_bluetooth_tui(self, widget):
+        # Prioriza lxterminal para evitar erro "Can't open display"
+        terminal = shutil.which("lxterminal") or shutil.which("x-terminal-emulator") or shutil.which("gnome-terminal") or shutil.which("xterm")
+        
+        # Só abre se achar o bluetuith E um terminal
         if shutil.which("bluetuith") and terminal:
-             subprocess.Popen([terminal, "-e", "bluetuith"])
-        elif shutil.which("blueman-manager"):
-             subprocess.Popen(["blueman-manager"])
+            subprocess.Popen([terminal, "-e", "bluetuith"])
+        else:
+            print("Erro: Bluetuith ou Terminal não encontrado.")
+
+    def configurar_bluetooth_gui(self, widget):
+        if shutil.which("blueman-manager"):
+            subprocess.Popen(["blueman-manager"])
+        else:
+            print("Erro: Blueman-manager não encontrado.")
 
     # --- Lógica da Tecla (Setas) ---
     def ao_pressionar_tecla(self, widget, event):
         keyname = Gdk.keyval_name(event.keyval)
         
-        # Se apertar Seta Baixo ou Cima
         if keyname in ["Down", "Up"]:
             foco_atual = self.get_focus()
             botoes = self.box.get_children()
             
-            # Se ninguém tem foco, pega o primeiro
             if foco_atual not in botoes:
                 botoes[0].grab_focus()
                 return True
@@ -92,11 +101,10 @@ class PainelAcessivel(Gtk.Window):
             else: # Up
                 proximo = (indice - 1) % len(botoes)
             
-            # Muda o foco (O Orca vai ler automaticamente!)
             botoes[proximo].grab_focus()
-            return True # Impede o comportamento padrão
+            return True 
             
-        return False # Deixa outras teclas funcionarem normal (Enter, Espaço)
+        return False
 
 # --- Inicia o Programa ---
 win = PainelAcessivel()
