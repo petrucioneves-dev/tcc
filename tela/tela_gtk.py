@@ -73,10 +73,13 @@ class PainelAcessivel(Gtk.Window):
     # --- FUNÇÕES DOS NOVOS BOTÕES ---
 
     def abrir_pastas(self, widget):
-        print("Abrindo gerenciador de arquivos...")
-        # O xdg-open é o comando universal. 
-        # Ele abre a pasta sem causar o erro de memória do pcmanfm direto.
-        subprocess.Popen(["xdg-open", os.path.expanduser("~")])
+        print("Abrindo gerenciador de arquivos (Thunar)...")
+        # O Thunar é muito mais estável com acessibilidade e não trava
+        # O argumento os.path.expanduser("~") abre a pasta do usuário (/home/tcc)
+        if shutil.which("thunar"):
+            subprocess.Popen(["thunar", os.path.expanduser("~")])
+        else:
+            print("Erro: Thunar não está instalado. Rode 'sudo apt install thunar'")
         
     def abrir_internet(self, widget):
         print("Abrindo navegador...")
