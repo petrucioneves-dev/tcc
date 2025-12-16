@@ -53,10 +53,10 @@ class PainelAcessivel(Gtk.Window):
     # --- Funções de Lógica ---
 
     def aumentar_volume(self, widget):
-        os.system("amixer sset PCM 5%+") 
+        os.system("amixer sset Master 5%+") 
 
     def diminuir_volume(self, widget):
-        os.system("amixer sset PCM 5%-")
+        os.system("amixer sset Master 5%-")
 
     def configurar_wifi(self, widget):
         # Adicionei lxterminal para garantir compatibilidade com Wayland
